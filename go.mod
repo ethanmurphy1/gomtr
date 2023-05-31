@@ -1,4 +1,4 @@
-module gomtr
+module github.com/ethanmurphy1/gomtr
 
 go 1.20
 
