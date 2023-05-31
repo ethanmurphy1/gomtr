@@ -3,13 +3,14 @@ package gomtr
 import (
 	"errors"
 	"fmt"
-	"github.com/gogather/com"
-	"github.com/gogather/safemap"
 	"io"
 	"os"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/gogather/com"
+	"github.com/gogather/safemap"
 )
 
 // parsed ttl item data
@@ -89,8 +90,10 @@ func (mt *MtrTask) send(in io.WriteCloser, id int64, ip string, c int) {
 }
 
 // check latest ttl is replied
-//    0  [    returned]  ready and get replied
-//    1  [    returned]  ready but not replied, go on
+//
+//	0  [    returned]  ready and get replied
+//	1  [    returned]  ready but not replied, go on
+//
 // [-1]  [not returned]  not ready, should block
 func (mt *MtrTask) checkLoop(rid int64) int {
 	start := time.Now().UnixNano() / 1000000
@@ -130,20 +133,17 @@ func (mt *MtrTask) checkLoop(rid int64) int {
 
 		time.Sleep(time.Millisecond)
 	}
-
-	// this will not reached
-	return 1
 }
 
 func (mt *MtrTask) clear() {
-	for key, _ := range mt.ttlData.GetMap() {
+	for key := range mt.ttlData.GetMap() {
 		mt.ttlData.Remove(key)
 	}
 }
 
 func (mt *MtrTask) GetResultMap() map[int]map[int]int64 {
 	results := map[int]map[int]int64{}
-	for key, _ := range mt.ttlData.GetMap() {
+	for key := range mt.ttlData.GetMap() {
 		item, ok := mt.ttlData.Get(key)
 		if ok {
 			itemData, ok := item.(*TTLData)

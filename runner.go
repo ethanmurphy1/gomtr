@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/gogather/safemap"
 	"io"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gogather/safemap"
 )
 
 const maxttls = 50
@@ -156,6 +157,10 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 
 	task.send(ms.in, taskID, ip, c)
 
+}
+
+func (ms *MtrService) ClearQueue() {
+	ms.taskQueue.Clear()
 }
 
 func (ms *MtrService) GetServiceStartupTime() string {

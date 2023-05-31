@@ -2,11 +2,12 @@ package gomtr
 
 import (
 	"fmt"
-	"github.com/gogather/com"
 	"math"
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/gogather/com"
 )
 
 func fmtNumber(n float64) string {
@@ -115,7 +116,7 @@ func sortBest(array []*TTLData) float64 {
 	for i := 0; i < len(array); i++ {
 		item := array[i]
 		if item.err == nil {
-			if item.time > best {
+			if item.time < best {
 				best = item.time
 			}
 		}
@@ -134,7 +135,7 @@ func sortWorst(array []*TTLData) float64 {
 	for i := 0; i < len(array); i++ {
 		item := array[i]
 		if item.err == nil {
-			if item.time < worst {
+			if item.time > worst {
 				worst = item.time
 			}
 		}
