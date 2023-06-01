@@ -122,7 +122,8 @@ func (ms *MtrService) startup() {
 
 	// wait sub process
 	if e := cmd.Wait(); nil != e {
-		fmt.Printf("ERROR: %v\n", e)
+		//fmt.Printf("ERROR: %v\n", e)
+		return
 	}
 
 }
