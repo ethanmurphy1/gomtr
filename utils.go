@@ -111,7 +111,7 @@ func sortAvg(array []*TTLData) float64 {
 }
 
 func sortBest(array []*TTLData) float64 {
-	var best int64 = -1
+	var best int64 = 50000
 
 	for i := 0; i < len(array); i++ {
 		item := array[i]
@@ -130,7 +130,7 @@ func sortBest(array []*TTLData) float64 {
 }
 
 func sortWorst(array []*TTLData) float64 {
-	var worst int64 = array[0].time
+	var worst int64 = -1
 
 	for i := 0; i < len(array); i++ {
 		item := array[i]

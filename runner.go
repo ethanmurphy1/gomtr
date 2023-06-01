@@ -15,6 +15,8 @@ import (
 
 const maxttls = 50
 
+var shutdown chan bool
+
 // service
 type MtrService struct {
 	taskQueue     *safemap.SafeMap
@@ -43,6 +45,7 @@ func NewMtrService(path string) *MtrService {
 
 // Start start service and wait mtr-packet stdio
 func (ms *MtrService) Start() {
+	shutdown = make(chan bool)
 	go ms.startup()
 	time.Sleep(time.Second)
 }
@@ -76,23 +79,27 @@ func (ms *MtrService) startup() {
 	// read data and put into result chan
 	go func() {
 		for {
-			// read lines
-			bio := bufio.NewReader(ms.out)
-			for {
-				output, isPrefix, err := bio.ReadLine()
-				if err != nil {
-					break
-				}
+			select {
+			case <-shutdown:
+				return
+			default:
+				// read lines
+				bio := bufio.NewReader(ms.out)
+				for {
+					output, isPrefix, err := bio.ReadLine()
+					if err != nil {
+						break
+					}
 
-				if string(output) != "" {
-					ms.outChan <- string(output)
-				}
+					if string(output) != "" {
+						ms.outChan <- string(output)
+					}
 
-				if isPrefix {
-					break
+					if isPrefix {
+						break
+					}
 				}
 			}
-
 		}
 	}()
 
@@ -100,6 +107,8 @@ func (ms *MtrService) startup() {
 	go func() {
 		for {
 			select {
+			case <-shutdown:
+				return
 			case result := <-ms.outChan:
 				{
 					ms.parseTTLData(result)
@@ -112,9 +121,14 @@ func (ms *MtrService) startup() {
 	// error output
 	go func() {
 		for {
-			var readBytes []byte = make([]byte, 100)
-			err.Read(readBytes)
-			time.Sleep(time.Second)
+			select {
+			case <-shutdown:
+				return
+			default:
+				var readBytes []byte = make([]byte, 100)
+				err.Read(readBytes)
+				time.Sleep(time.Second)
+			}
 		}
 	}()
 
@@ -162,6 +176,10 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 
 func (ms *MtrService) ClearQueue() {
 	ms.taskQueue.Clear()
+}
+
+func (ms *MtrService) Close() {
+	close(shutdown)
 }
 
 func (ms *MtrService) GetServiceStartupTime() string {
