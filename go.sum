@@ -1,9 +1,5 @@
-github.com/duguying/gomtr v0.0.0-20180410061411-bcec844454ce h1:TlCmpfJBJUj1Jz1Sh7Nh6Qa/Qof1TJvG/KpxKqyAAsA=
-github.com/duguying/gomtr v0.0.0-20180410061411-bcec844454ce/go.mod h1:/ihEe56pbowrFmPC/cg9Pdb6Y6WLB+kA8yFGbD9xaIM=
 github.com/gogather/com v1.0.1 h1:Yh0ANanYxc/InCMUJkYO6uomTaNIVxUEFjCftHFQiTM=
 github.com/gogather/com v1.0.1/go.mod h1:Zx7aZxX9P+h/qGVsr/QevmjvUwqYEKmCvaUjXRLs/zY=
-github.com/gogather/safemap v0.0.0-20170930074128-e4dc79c94fb6 h1:7xSoSUf+WJZiIPMCRmhsNo9t5uV7app1EkT6mLgkAoI=
-github.com/gogather/safemap v0.0.0-20170930074128-e4dc79c94fb6/go.mod h1:vU7iyfqc7U1X/qHEzcim56jarAw9aa7WDopUzepiO2I=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=

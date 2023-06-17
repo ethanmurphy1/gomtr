@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/gogather/safemap"
 )
 
 const maxttls = 50
@@ -19,7 +17,7 @@ var shutdown chan bool
 
 // service
 type MtrService struct {
-	taskQueue     *safemap.SafeMap
+	taskQueue     *SafeMap
 	flag          int64
 	index         int64
 	in            io.WriteCloser
@@ -33,7 +31,7 @@ type MtrService struct {
 // path - mtr-packet executable path
 func NewMtrService(path string) *MtrService {
 	return &MtrService{
-		taskQueue:     safemap.New(),
+		taskQueue:     New(),
 		flag:          102400,
 		index:         0,
 		in:            nil,
@@ -164,7 +162,7 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 		id:       taskID,
 		callback: callback,
 		c:        c,
-		ttlData:  safemap.New(),
+		ttlData:  New(),
 		target:   ip,
 	}
 

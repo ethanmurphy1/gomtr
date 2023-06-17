@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gogather/com"
-	"github.com/gogather/safemap"
 )
 
 // parsed ttl item data
@@ -31,7 +30,7 @@ type MtrTask struct {
 	callback func(interface{})
 	c        int
 	target   string
-	ttlData  *safemap.SafeMap // item is ttlData, key is ttl
+	ttlData  *SafeMap // item is ttlData, key is ttl
 	sendTime time.Time
 	CostTime int64
 }
@@ -171,10 +170,7 @@ func (mt *MtrTask) GetSummary() map[int]map[string]string {
 
 	var keys []int
 	for ks := range mt.ttlData.GetMap() {
-		k, e := strconv.Atoi(ks)
-		if e != nil {
-			//fmt.Println("e", e)
-		}
+		k, _ := strconv.Atoi(ks)
 		keys = append(keys, k)
 	}
 	sort.Ints(keys)
