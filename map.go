@@ -64,11 +64,15 @@ func (sm *SafeMap) JSON() (json string) {
 
 // GetMap get original map
 func (sm *SafeMap) GetMap() map[string]interface{} {
-	defer func() {
-		sm.RUnlock()
-	}()
-	sm.RLock()
-	return sm.M
+	sm.Lock()
+	defer sm.Lock()
+
+	// Attempt to make a deep copy to avoid concurrency issues. This is a test
+	result := make(map[string]interface{})
+	for k, v := range sm.M {
+		result[k] = v
+	}
+	return result
 }
 
 // Clear clear the map
