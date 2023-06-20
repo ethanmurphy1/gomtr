@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,7 @@ type MtrService struct {
 	outChan       chan string
 	mtrPacketPath string
 	startAt       string
+	sync.RWMutex
 }
 
 // NewMtrService new a mtr service
@@ -49,7 +51,7 @@ func (ms *MtrService) Start() {
 }
 
 func (ms *MtrService) startup() {
-
+	ms.Lock()
 	cmd := exec.Command(ms.mtrPacketPath)
 
 	var e error
@@ -132,6 +134,8 @@ func (ms *MtrService) startup() {
 
 	ms.startAt = fmt.Sprintf("Start: %s", getMtrStartTime())
 
+	ms.Unlock()
+
 	// wait sub process
 	if e := cmd.Wait(); nil != e {
 		//fmt.Printf("ERROR: %v\n", e)
@@ -145,7 +149,8 @@ func (ms *MtrService) startup() {
 // c        - repeat time, such as mtr tool argument c
 // callback - just callback after task ready
 func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
-
+	ms.Lock()
+	defer ms.Unlock()
 	ms.index++
 
 	taskID := ms.index
@@ -169,7 +174,6 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)
 
 	task.send(ms.in, taskID, ip, c)
-
 }
 
 func (ms *MtrService) ClearQueue() {
@@ -181,6 +185,8 @@ func (ms *MtrService) Close() {
 }
 
 func (ms *MtrService) GetServiceStartupTime() string {
+	ms.RLock()
+	defer ms.RUnlock()
 	return ms.startAt
 }
 

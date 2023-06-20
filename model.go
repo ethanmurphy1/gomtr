@@ -135,13 +135,15 @@ func (mt *MtrTask) checkLoop(rid int64) int {
 }
 
 func (mt *MtrTask) clear() {
-	for key := range mt.ttlData.GetMap() {
-		mt.ttlData.Remove(key)
-	}
+	mt.ttlData.Lock()
+	mt.ttlData.M = make(map[string]interface{})
+	mt.ttlData.Unlock()
 }
 
 func (mt *MtrTask) GetResultMap() map[int]map[int]int64 {
 	results := map[int]map[int]int64{}
+	mt.ttlData.RLock()
+	defer mt.ttlData.RUnlock()
 	for key := range mt.ttlData.GetMap() {
 		item, ok := mt.ttlData.Get(key)
 		if ok {
@@ -169,10 +171,12 @@ func (mt *MtrTask) GetSummary() map[int]map[string]string {
 	results := map[int][]*TTLData{}
 
 	var keys []int
+	mt.ttlData.RLock()
 	for ks := range mt.ttlData.GetMap() {
 		k, _ := strconv.Atoi(ks)
 		keys = append(keys, k)
 	}
+	mt.ttlData.RUnlock()
 	sort.Ints(keys)
 
 	for _, key := range keys {
