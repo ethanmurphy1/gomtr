@@ -39,7 +39,7 @@ func (mt *MtrTask) save(ttl int, data *TTLData) {
 	mt.ttlData.Put(fmt.Sprintf("%d", ttl), data)
 }
 
-func (mt *MtrTask) send(in io.WriteCloser, id int64, ip string, c int) {
+func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 	defer func() {
 		recover()
 	}()
@@ -49,6 +49,8 @@ func (mt *MtrTask) send(in io.WriteCloser, id int64, ip string, c int) {
 	} else if c < 1 {
 		c = 1
 	}
+
+	writer := *in
 
 	mt.sendTime = time.Now()
 
@@ -72,7 +74,7 @@ func (mt *MtrTask) send(in io.WriteCloser, id int64, ip string, c int) {
 
 			prevRid = rid
 
-			in.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d\n", rid, ip, idx)))
+			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d\n", rid, ip, idx)))
 
 			time.Sleep(time.Millisecond)
 		}

@@ -150,10 +150,10 @@ func (ms *MtrService) startup() {
 // callback - just callback after task ready
 func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 	ms.Lock()
-	defer ms.Unlock()
 	ms.index++
 
 	taskID := ms.index
+	writer := ms.in
 
 	if ms.index > ms.flag {
 		ms.index = 1
@@ -173,7 +173,9 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)
 
-	task.send(ms.in, taskID, ip, c)
+	ms.Unlock()
+
+	task.send(&writer, taskID, ip, c)
 }
 
 func (ms *MtrService) ClearQueue() {
