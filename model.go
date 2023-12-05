@@ -76,7 +76,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 
 			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d\n", rid, ip, idx)))
 
-			time.Sleep(time.Millisecond)
+			time.Sleep(time.Millisecond * 100)
 		}
 	}
 
