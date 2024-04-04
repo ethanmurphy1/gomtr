@@ -33,13 +33,14 @@ type MtrTask struct {
 	ttlData  *SafeMap // item is ttlData, key is ttl
 	sendTime time.Time
 	CostTime int64
+	timeout  time.Duration
 }
 
 func (mt *MtrTask) save(ttl int, data *TTLData) {
 	mt.ttlData.Put(fmt.Sprintf("%d", ttl), data)
 }
 
-func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
+func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops int) {
 	defer func() {
 		recover()
 	}()
@@ -55,9 +56,13 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 	mt.sendTime = time.Now()
 
 	for i := 1; i <= c; i++ {
+		if time.Since(mt.sendTime) > mt.timeout {
+			mt.c = i
+			break
+		}
 		sendId := id*10000 + int64(i)*100
 		var prevRid int64 = 0
-		for idx := 1; idx <= maxttls; idx++ {
+		for idx := 1; idx <= maxHops; idx++ {
 			// get reality id
 			rid := sendId + int64(idx)
 

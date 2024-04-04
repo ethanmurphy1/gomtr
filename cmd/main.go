@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	mtr := gomtr.NewMtrService("/opt/services/sbnetwork-monitor/mtr-packet")
+	mtr := gomtr.NewMtrService("/opt/services/sbnetwork-monitor/mtr-packet", time.Second*60)
 	go mtr.Start()
 
 	time.Sleep(time.Second * 5)
@@ -21,7 +21,7 @@ func main() {
 	for {
 		for i := 0; i < len(iplist); i++ {
 			id := i
-			go mtr.Request(iplist[i], 10, func(response interface{}) {
+			go mtr.Request(iplist[i], 10, 50, func(response interface{}) {
 				task := response.(*gomtr.MtrTask)
 				log.Bluef("[ID] %d cost: %d ms\n", id, task.CostTime/1000000)
 				fmt.Println(task.GetSummaryDecorateString())

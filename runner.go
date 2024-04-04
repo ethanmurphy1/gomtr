@@ -12,8 +12,6 @@ import (
 	"time"
 )
 
-const maxttls = 50
-
 var shutdown chan bool
 
 // service
@@ -26,12 +24,13 @@ type MtrService struct {
 	outChan       chan string
 	mtrPacketPath string
 	startAt       string
+	timeout       time.Duration
 	sync.RWMutex
 }
 
 // NewMtrService new a mtr service
 // path - mtr-packet executable path
-func NewMtrService(path string) *MtrService {
+func NewMtrService(path string, timeout time.Duration) *MtrService {
 	return &MtrService{
 		taskQueue:     New(),
 		flag:          102400,
@@ -40,6 +39,7 @@ func NewMtrService(path string) *MtrService {
 		out:           nil,
 		outChan:       make(chan string, 1000),
 		mtrPacketPath: path,
+		timeout:       timeout,
 	}
 }
 
@@ -148,7 +148,7 @@ func (ms *MtrService) startup() {
 // ip       - the test ip
 // c        - repeat time, such as mtr tool argument c
 // callback - just callback after task ready
-func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
+func (ms *MtrService) Request(ip string, c int, maxHops int, callback func(interface{})) {
 	ms.Lock()
 	ms.index++
 
@@ -169,13 +169,14 @@ func (ms *MtrService) Request(ip string, c int, callback func(interface{})) {
 		c:        c,
 		ttlData:  New(),
 		target:   ip,
+		timeout:  ms.timeout,
 	}
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)
 
 	ms.Unlock()
 
-	task.send(&writer, taskID, ip, c)
+	task.send(&writer, taskID, ip, c, maxHops)
 }
 
 func (ms *MtrService) ClearQueue() {
