@@ -31,7 +31,7 @@ type MtrTask struct {
 	c        int
 	target   string
 	ttlData  *SafeMap // item is ttlData, key is ttl
-	sendTime time.Time
+	SendTime time.Time
 	CostTime int64
 	timeout  time.Duration
 }
@@ -53,10 +53,10 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 	writer := *in
 
-	mt.sendTime = time.Now()
+	mt.SendTime = time.Now()
 
 	for i := 1; i <= c; i++ {
-		if time.Since(mt.sendTime) > mt.timeout {
+		if time.Since(mt.SendTime) > mt.timeout {
 			mt.c = i
 			break
 		}
@@ -87,7 +87,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 	time.Sleep(time.Millisecond * 500)
 
-	mt.CostTime = time.Now().UnixNano() - mt.sendTime.UnixNano()
+	mt.CostTime = time.Now().UnixNano() - mt.SendTime.UnixNano()
 
 	// callback
 	mt.callback(mt)
