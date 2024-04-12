@@ -187,6 +187,7 @@ func (ms *MtrService) Request(ip string, c int, settings MTRSettings, callback f
 		probeTimeoutSec: settings.TTLTimeout,
 		packetSizeBytes: settings.PacketSize,
 		protocol:        settings.Protocol,
+		maxHops:         settings.MaxHops,
 	}
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)

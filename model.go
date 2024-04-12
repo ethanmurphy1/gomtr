@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gogather/com"
@@ -105,7 +106,16 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 
 			prevRid = rid
 
-			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d timeout %d size %d protocol %s\n", rid, ip, idx, mt.probeTimeoutSec, mt.packetSizeBytes, mt.protocol)))
+			command := fmt.Sprintf(
+				"%d send-probe ip-4 %s ttl %d size %d protocol %s timeout %d\n",
+				rid,
+				ip,
+				idx,
+				mt.packetSizeBytes,
+				mt.protocol,
+				mt.probeTimeoutSec)
+
+			writer.Write([]byte(command))
 
 			time.Sleep(time.Millisecond * 100)
 		}
@@ -141,15 +151,19 @@ func (mt *MtrTask) checkLoop(rid int64) int {
 		d, ok := mt.ttlData.Get(fmt.Sprintf("%d", ttlID))
 		if !ok || d == nil {
 			// not ready, continue
+			continue
 		} else {
 			data, ok := d.(*TTLData)
 			if !ok || data == nil {
 				// not ready, continue
+				continue
 			} else {
 				// ready, check replied
 				if data.status == "reply" {
 					// get replied
 					return 0
+				} else if strings.Contains(data.raw, "no-reply") {
+					return 2
 				} else if data.status == "ttl-expired" || data.err != nil {
 					// not get replied
 					return 1
