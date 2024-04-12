@@ -151,11 +151,18 @@ func (ms *MtrService) startup() {
 
 }
 
+type MTRSettings struct {
+	Protocol   string
+	MaxHops    int
+	TTLTimeout int
+	PacketSize int
+}
+
 // Request send a task request
 // ip       - the test ip
 // c        - repeat time, such as mtr tool argument c
 // callback - just callback after task ready
-func (ms *MtrService) Request(ip string, c int, maxHops int, ttlTimeout int, packetSize int, callback func(interface{})) {
+func (ms *MtrService) Request(ip string, c int, settings MTRSettings, callback func(interface{})) {
 	ms.Lock()
 	ms.index++
 
@@ -177,15 +184,16 @@ func (ms *MtrService) Request(ip string, c int, maxHops int, ttlTimeout int, pac
 		ttlData:         New(),
 		target:          ip,
 		timeout:         ms.timeout,
-		probeTimeoutSec: ttlTimeout,
-		packetSizeBytes: packetSize,
+		probeTimeoutSec: settings.TTLTimeout,
+		packetSizeBytes: settings.PacketSize,
+		protocol:        settings.Protocol,
 	}
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)
 
 	ms.Unlock()
 
-	task.send(&writer, taskID, ip, c, maxHops)
+	task.send(&writer, taskID, ip, c)
 }
 
 func (ms *MtrService) ClearQueue() {

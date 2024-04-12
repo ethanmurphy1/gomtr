@@ -36,6 +36,8 @@ type MtrTask struct {
 	timeout         time.Duration
 	probeTimeoutSec int
 	packetSizeBytes int
+	maxHops         int
+	protocol        string
 	TotalPackets    int
 }
 
@@ -43,10 +45,12 @@ func (mt *MtrTask) save(ttl int, data *TTLData) {
 	mt.ttlData.Put(fmt.Sprintf("%d", ttl), data)
 }
 
-func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops int) {
+func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 	defer func() {
 		recover()
 	}()
+
+	maxHops := mt.maxHops
 
 	if c > 100 {
 		c = 99
@@ -101,7 +105,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 			prevRid = rid
 
-			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d timeout %d size %d\n", rid, ip, idx, mt.probeTimeoutSec, mt.packetSizeBytes)))
+			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d timeout %d size %d protocol %s\n", rid, ip, idx, mt.probeTimeoutSec, mt.packetSizeBytes, mt.protocol)))
 
 			time.Sleep(time.Millisecond * 100)
 		}
