@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -25,12 +26,14 @@ type MtrService struct {
 	mtrPacketPath string
 	startAt       string
 	timeout       time.Duration
+	uid           uint32 // user id to run mtr-packet under
+	gid           uint32 // group id to run mtr-packet under
 	sync.RWMutex
 }
 
 // NewMtrService new a mtr service
 // path - mtr-packet executable path
-func NewMtrService(path string, timeout time.Duration) *MtrService {
+func NewMtrService(path string, timeout time.Duration, uid int, gid int) *MtrService {
 	return &MtrService{
 		taskQueue:     New(),
 		flag:          102400,
@@ -40,6 +43,8 @@ func NewMtrService(path string, timeout time.Duration) *MtrService {
 		outChan:       make(chan string, 1000),
 		mtrPacketPath: path,
 		timeout:       timeout,
+		uid:           uint32(uid),
+		gid:           uint32(gid),
 	}
 }
 
@@ -53,6 +58,8 @@ func (ms *MtrService) Start() {
 func (ms *MtrService) startup() {
 	ms.Lock()
 	cmd := exec.Command(ms.mtrPacketPath)
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: ms.uid, Gid: ms.gid}
 
 	var e error
 

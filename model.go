@@ -26,14 +26,16 @@ type TTLData struct {
 
 // task
 type MtrTask struct {
-	id       int64
-	callback func(interface{})
-	c        int
-	target   string
-	ttlData  *SafeMap // item is ttlData, key is ttl
-	SendTime time.Time
-	CostTime int64
-	timeout  time.Duration
+	id              int64
+	callback        func(interface{})
+	c               int
+	target          string
+	ttlData         *SafeMap // item is ttlData, key is ttl
+	SendTime        time.Time
+	CostTime        int64
+	timeout         time.Duration
+	probeTimeoutSec int
+	packetSizeBytes int
 }
 
 func (mt *MtrTask) save(ttl int, data *TTLData) {
@@ -55,6 +57,8 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 	mt.SendTime = time.Now()
 
+	lastReply := 0
+	didComplete := false
 	for i := 1; i <= c; i++ {
 		if time.Since(mt.SendTime) > mt.timeout {
 			mt.c = i
@@ -62,7 +66,16 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 		}
 		sendId := id*10000 + int64(i)*100
 		var prevRid int64 = 0
-		for idx := 1; idx <= maxHops; idx++ {
+		var idx = 1
+		if i > 1 {
+			if !didComplete {
+				// Test did not complete within maxHops. Reduce TTL length to last responsive hop
+				maxHops = lastReply
+			}
+		}
+		lastReply = 0
+		didComplete = false
+		for idx = 1; idx <= maxHops; idx++ {
 			// get reality id
 			rid := sendId + int64(idx)
 
@@ -70,16 +83,23 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 			if idx > 1 {
 				// sync check status, it will block until ready, and return status
 				// ready:
-				//       0  get replied
-				//       1  not get replied, such as ttl-expired, continue loop
-				if mt.checkLoop(prevRid) == 0 {
+				//       0  reached destination
+				//       1  host is alive, but not destination. continue
+				//		 2  no reply, host is dead
+				check := mt.checkLoop(prevRid)
+				if check == 0 {
+					didComplete = true
+					lastReply = idx
 					break
+				}
+				if check == 1 {
+					lastReply = idx
 				}
 			}
 
 			prevRid = rid
 
-			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d\n", rid, ip, idx)))
+			writer.Write([]byte(fmt.Sprintf("%d send-probe ip-4 %s ttl %d timeout %d size %d\n", rid, ip, idx, mt.probeTimeoutSec, mt.packetSizeBytes)))
 
 			time.Sleep(time.Millisecond * 100)
 		}
@@ -99,6 +119,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 //
 //	0  [    returned]  ready and get replied
 //	1  [    returned]  ready but not replied, go on
+//	2  [    returned]  no reply
 //
 // [-1]  [not returned]  not ready, should block
 func (mt *MtrTask) checkLoop(rid int64) int {
@@ -134,7 +155,7 @@ func (mt *MtrTask) checkLoop(rid int64) int {
 		if now-start > 1 {
 			//fmt.Printf("[timeout:%d][rid:%d]\n", now-start, rid)
 			mt.save(ttlID, &TTLData{err: errors.New("no-reply"), TTLID: ttlID})
-			return 1
+			return 2
 		}
 
 		time.Sleep(time.Millisecond)
