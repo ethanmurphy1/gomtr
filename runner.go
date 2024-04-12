@@ -155,7 +155,7 @@ func (ms *MtrService) startup() {
 // ip       - the test ip
 // c        - repeat time, such as mtr tool argument c
 // callback - just callback after task ready
-func (ms *MtrService) Request(ip string, c int, maxHops int, callback func(interface{})) {
+func (ms *MtrService) Request(ip string, c int, maxHops int, ttlTimeout int, packetSize int, callback func(interface{})) {
 	ms.Lock()
 	ms.index++
 
@@ -171,12 +171,14 @@ func (ms *MtrService) Request(ip string, c int, maxHops int, callback func(inter
 	}
 
 	task := &MtrTask{
-		id:       taskID,
-		callback: callback,
-		c:        c,
-		ttlData:  New(),
-		target:   ip,
-		timeout:  ms.timeout,
+		id:              taskID,
+		callback:        callback,
+		c:               c,
+		ttlData:         New(),
+		target:          ip,
+		timeout:         ms.timeout,
+		probeTimeoutSec: ttlTimeout,
+		packetSizeBytes: packetSize,
 	}
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)

@@ -36,6 +36,7 @@ type MtrTask struct {
 	timeout         time.Duration
 	probeTimeoutSec int
 	packetSizeBytes int
+	TotalPackets    int
 }
 
 func (mt *MtrTask) save(ttl int, data *TTLData) {
@@ -59,6 +60,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 	lastReply := 0
 	didComplete := false
+	probes := 0
 	for i := 1; i <= c; i++ {
 		if time.Since(mt.SendTime) > mt.timeout {
 			mt.c = i
@@ -103,11 +105,13 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int, maxHops 
 
 			time.Sleep(time.Millisecond * 100)
 		}
+		probes += idx
 	}
 
 	time.Sleep(time.Millisecond * 500)
 
 	mt.CostTime = time.Now().UnixNano() - mt.SendTime.UnixNano()
+	mt.TotalPackets = probes
 
 	// callback
 	mt.callback(mt)
