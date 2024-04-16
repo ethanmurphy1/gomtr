@@ -184,7 +184,7 @@ func (ms *MtrService) Request(ip string, c int, settings MTRSettings, callback f
 		ttlData:         New(),
 		target:          ip,
 		timeout:         ms.timeout,
-		probeTimeoutSec: settings.TTLTimeout,
+		probeTimeoutMs:  settings.TTLTimeout,
 		packetSizeBytes: settings.PacketSize,
 		protocol:        settings.Protocol,
 		maxHops:         settings.MaxHops,

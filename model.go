@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"sort"
 	"strconv"
@@ -35,7 +36,7 @@ type MtrTask struct {
 	SendTime        time.Time
 	CostTime        int64
 	timeout         time.Duration
-	probeTimeoutSec int
+	probeTimeoutMs  int
 	packetSizeBytes int
 	maxHops         int
 	protocol        string
@@ -68,7 +69,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 	probes := 0
 	for i := 1; i <= c; i++ {
 		if time.Since(mt.SendTime) > mt.timeout {
-			mt.c = i
+			mt.c = i - 1
 			break
 		}
 		sendId := id*10000 + int64(i)*100
@@ -113,11 +114,11 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 				idx,
 				mt.packetSizeBytes,
 				mt.protocol,
-				mt.probeTimeoutSec)
+				int(math.Ceil(float64(mt.probeTimeoutMs)/1000.0))) // Round timeout in ms up to next full second
 
 			writer.Write([]byte(command))
 
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Millisecond * time.Duration(mt.probeTimeoutMs))
 		}
 		probes += idx
 	}
@@ -141,22 +142,20 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 //
 // [-1]  [not returned]  not ready, should block
 func (mt *MtrTask) checkLoop(rid int64) int {
-	start := time.Now().UnixNano() / 1000000
+	// get ttlID
+	ttlID := getTTLID(rid)
 
 	for {
-		// get ttlID
-		ttlID := getTTLID(rid)
-
 		// check ready
 		d, ok := mt.ttlData.Get(fmt.Sprintf("%d", ttlID))
 		if !ok || d == nil {
 			// not ready, continue
-			continue
+			break
 		} else {
 			data, ok := d.(*TTLData)
 			if !ok || data == nil {
 				// not ready, continue
-				continue
+				break
 			} else {
 				// ready, check replied
 				if data.status == "reply" {
@@ -170,18 +169,10 @@ func (mt *MtrTask) checkLoop(rid int64) int {
 				}
 			}
 		}
-
-		now := time.Now().UnixNano() / 1000000
-
-		// timeout
-		if now-start > 1 {
-			//fmt.Printf("[timeout:%d][rid:%d]\n", now-start, rid)
-			mt.save(ttlID, &TTLData{err: errors.New("no-reply"), TTLID: ttlID})
-			return 2
-		}
-
-		time.Sleep(time.Millisecond)
 	}
+
+	mt.save(ttlID, &TTLData{err: errors.New("no-reply"), TTLID: ttlID})
+	return 2
 }
 
 func (mt *MtrTask) clear() {
