@@ -28,6 +28,7 @@ type MtrService struct {
 	timeout       time.Duration
 	uid           uint32 // user id to run mtr-packet under
 	gid           uint32 // group id to run mtr-packet under
+	cmd           *exec.Cmd
 	sync.RWMutex
 }
 
@@ -58,6 +59,7 @@ func (ms *MtrService) Start() {
 func (ms *MtrService) startup() {
 	ms.Lock()
 	cmd := exec.Command(ms.mtrPacketPath)
+	ms.cmd = cmd
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: ms.uid, Gid: ms.gid}
 
@@ -130,6 +132,7 @@ func (ms *MtrService) startup() {
 		for {
 			select {
 			case <-shutdown:
+				err.Close()
 				return
 			default:
 				var readBytes []byte = make([]byte, 100)
@@ -203,6 +206,9 @@ func (ms *MtrService) ClearQueue() {
 
 func (ms *MtrService) Close() {
 	close(shutdown)
+	ms.in.Close()
+	ms.out.Close()
+	ms.cmd.Process.Kill()
 }
 
 func (ms *MtrService) GetServiceStartupTime() string {
