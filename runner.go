@@ -155,10 +155,11 @@ func (ms *MtrService) startup() {
 }
 
 type MTRSettings struct {
-	Protocol   string
-	MaxHops    int
-	TTLTimeout int
-	PacketSize int
+	Protocol      string
+	MaxHops       int
+	TTLTimeout    int
+	PacketSize    int
+	CycleInterval int
 }
 
 // Request send a task request
@@ -191,6 +192,7 @@ func (ms *MtrService) Request(ip string, c int, settings MTRSettings, callback f
 		packetSizeBytes: settings.PacketSize,
 		protocol:        settings.Protocol,
 		maxHops:         settings.MaxHops,
+		cycleIntervalMs: settings.CycleInterval,
 	}
 
 	ms.taskQueue.Put(fmt.Sprintf("%d", taskID), task)

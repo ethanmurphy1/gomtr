@@ -40,6 +40,7 @@ type MtrTask struct {
 	packetSizeBytes int
 	maxHops         int
 	protocol        string
+	cycleIntervalMs int
 	TotalPackets    int
 }
 
@@ -121,6 +122,7 @@ func (mt *MtrTask) send(in *io.WriteCloser, id int64, ip string, c int) {
 			time.Sleep(time.Millisecond * time.Duration(mt.probeTimeoutMs))
 		}
 		probes += idx
+		time.Sleep(time.Millisecond * time.Duration(mt.cycleIntervalMs))
 	}
 
 	time.Sleep(time.Millisecond * 500)
