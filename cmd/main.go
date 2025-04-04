@@ -10,7 +10,8 @@ import (
 
 func main() {
 	mtr := gomtr.NewMtrService("/opt/services/sbnetwork-monitor/mtr-packet", time.Second*60, 1000, 1000)
-	go mtr.Start()
+	mtrAlive := make(chan bool)
+	go mtr.Start(mtrAlive)
 
 	settings := gomtr.MTRSettings{
 		MaxHops:    50,

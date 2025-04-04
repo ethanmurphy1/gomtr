@@ -10,7 +10,8 @@ import (
 
 func Test_Mtr(t *testing.T) {
 	mtr := NewMtrService("./mtr-packet", time.Second*60, 1000, 1000)
-	go mtr.Start()
+	mtrAlive := make(chan bool)
+	go mtr.Start(mtrAlive)
 
 	settings := MTRSettings{
 		MaxHops:    50,

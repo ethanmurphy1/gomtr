@@ -29,6 +29,8 @@ type MtrService struct {
 	uid           uint32 // user id to run mtr-packet under
 	gid           uint32 // group id to run mtr-packet under
 	cmd           *exec.Cmd
+	alive         chan bool
+	Error         error
 	sync.RWMutex
 }
 
@@ -50,8 +52,9 @@ func NewMtrService(path string, timeout time.Duration, uid int, gid int) *MtrSer
 }
 
 // Start start service and wait mtr-packet stdio
-func (ms *MtrService) Start() {
+func (ms *MtrService) Start(mtrAlive chan bool) {
 	shutdown = make(chan bool)
+	ms.alive = mtrAlive
 	go ms.startup()
 	time.Sleep(time.Second)
 }
@@ -67,22 +70,30 @@ func (ms *MtrService) startup() {
 
 	ms.out, e = cmd.StdoutPipe()
 	if e != nil {
-		fmt.Println(e)
+		ms.Error = e
+		close(ms.alive)
+		return
 	}
 
 	ms.in, e = cmd.StdinPipe()
 	if e != nil {
-		fmt.Println(e)
+		ms.Error = e
+		close(ms.alive)
+		return
 	}
 
 	err, e := cmd.StderrPipe()
 	if e != nil {
-		fmt.Println(e)
+		ms.Error = e
+		close(ms.alive)
+		return
 	}
 
 	// start sub process
 	if e := cmd.Start(); nil != e {
-		fmt.Printf("ERROR: %v\n", e)
+		ms.Error = e
+		close(ms.alive)
+		return
 	}
 
 	// read data and put into result chan
@@ -90,6 +101,8 @@ func (ms *MtrService) startup() {
 		for {
 			select {
 			case <-shutdown:
+				return
+			case <-ms.alive:
 				return
 			default:
 				// read lines
@@ -118,6 +131,8 @@ func (ms *MtrService) startup() {
 			select {
 			case <-shutdown:
 				return
+			case <-ms.alive:
+				return
 			case result := <-ms.outChan:
 				{
 					ms.parseTTLData(result)
@@ -134,6 +149,8 @@ func (ms *MtrService) startup() {
 			case <-shutdown:
 				err.Close()
 				return
+			case <-ms.alive:
+				return
 			default:
 				var readBytes []byte = make([]byte, 100)
 				err.Read(readBytes)
@@ -148,7 +165,8 @@ func (ms *MtrService) startup() {
 
 	// wait sub process
 	if e := cmd.Wait(); nil != e {
-		//fmt.Printf("ERROR: %v\n", e)
+		ms.Error = e
+		close(ms.alive)
 		return
 	}
 
